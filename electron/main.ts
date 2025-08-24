@@ -69,10 +69,3 @@ app.whenReady().then(() => {
   createWindow()
   autoUpdater.checkForUpdatesAndNotify()
 })
-
-autoUpdater.logger = require('electron-log');
-
-autoUpdater.on('checking-for-update', () => autoUpdater?.logger?.info('Checking for update...'));
-autoUpdater.on('update-available', (info) => autoUpdater?.logger?.info(info));
-autoUpdater.on('update-not-available', () => autoUpdater?.logger?.info('No update available'));
-autoUpdater.on('error', (err) => autoUpdater?.logger?.error(err));
