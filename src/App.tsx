@@ -1,4 +1,3 @@
-
 declare global {
   interface Window {
     electronAPI: {
@@ -7,13 +6,13 @@ declare global {
       getTitle: (url: string) => Promise<string>;
       selectFolder: () => Promise<string | null>;
       getSettings: () => Promise<{ outputFolder?: string }>;
+      getThumb: (opts: { url: string; outputFolder?: string; fileName?: string }) => Promise<string>;
       onProgress: (cb: (progress: { phase: string; percent?: number; message?: string; mergeTime?: string; mergeDuration?: string; mergeElapsed?: number }) => void) => void;
     };
   }
 }
-import React, { useState, useEffect } from "react";
 
-
+import { useState, useEffect } from "react";
 
 export default function App() {
   const [url, setUrl] = useState("");
@@ -28,6 +27,7 @@ export default function App() {
   const [mergeTime, setMergeTime] = useState<string>("");
   const [mergeDuration, setMergeDuration] = useState<string>("");
   const [mergeElapsed, setMergeElapsed] = useState<number>(0);
+  const [autoDownloadThumb, setAutoDownloadThumb] = useState<boolean>(true); // Checkbox state
 
   // Load outputFolder from settings on mount
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function App() {
     });
   }, []);
 
-  // Khi url thay đổi, chỉ tự động get title nếu fileName rỗng
+  // Auto-update thumbnail and title
   useEffect(() => {
     const id = getYouTubeId(url);
     if (id) {
@@ -90,7 +90,14 @@ export default function App() {
     setProgress(0);
     setPhase("");
     setDownloading(true);
+
     try {
+      // Nếu autoDownloadThumb được bật, tải thumbnail trước
+      if (autoDownloadThumb) {
+        await window.electronAPI.getThumb({ url, outputFolder, fileName });
+        setStatus("Thumbnail downloaded successfully.");
+      }
+
       await window.electronAPI.downloadVideo({ url, outputFolder, fileName });
       setStatus("Done! Check your folder.");
       setProgress(100);
@@ -98,6 +105,7 @@ export default function App() {
     } catch (e) {
       setStatus("Download cancelled or failed.");
     }
+
     setDownloading(false);
   };
 
@@ -110,6 +118,20 @@ export default function App() {
     setMergeTime("");
     setMergeDuration("");
     setMergeElapsed(0);
+  };
+
+  const handleDownloadThumbOnly = async () => {
+    if (!url || !outputFolder || !fileName) {
+      setStatus("Please enter URL, select folder, and wait for file name.");
+      return;
+    }
+    setStatus("Downloading thumbnail...");
+    try {
+      const thumbPath = await window.electronAPI.getThumb({ url, outputFolder, fileName });
+      setStatus(`Thumbnail saved at: ${thumbPath}`);
+    } catch (e) {
+      setStatus("Failed to download thumbnail.");
+    }
   };
 
   return (
@@ -127,6 +149,7 @@ export default function App() {
           disabled={downloading || gettingTitle}
         />
       </div>
+
       <div className="mb-2">
         <button
           onClick={handleSelectFolder}
@@ -141,6 +164,7 @@ export default function App() {
         </button>
         {outputFolder && <span className="text-sm text-gray-700">{outputFolder}</span>}
       </div>
+
       <div className="mb-2">
         <input
           className="border px-2 py-1 w-96"
@@ -152,18 +176,20 @@ export default function App() {
         />
         {gettingTitle && <span className="ml-2 text-blue-500">Loading title...</span>}
       </div>
+
       <div className="mb-2">
         <button
           onClick={handleDownload}
-          className={`px-4 py-1 rounded mr-2  ${
+          className={`px-4 py-1 rounded mr-2 ${
             downloading || gettingTitle
               ? "bg-blue-300 text-white cursor-not-allowed"
               : "bg-blue-500 text-white cursor-pointer"
           }`}
           disabled={downloading || gettingTitle}
         >
-          Download
+          Download Video
         </button>
+
         {downloading && (
           <button
             onClick={handleCancel}
@@ -173,11 +199,40 @@ export default function App() {
           </button>
         )}
       </div>
+
       {thumb && (
-        <div className="flex justify-center mt-4">
+        <div className="flex flex-col items-center mt-4">
           <img src={thumb} alt="thumbnail" className="rounded shadow w-64 h-36 object-cover" />
+            <button
+            onClick={handleDownloadThumbOnly}
+            className={`mt-2 px-3 py-1 rounded ${
+              downloading
+              ? "bg-green-300 text-white cursor-not-allowed opacity-60"
+              : "bg-green-500 text-white cursor-pointer"
+            }`}
+            disabled={downloading}
+            >
+            Download Thumbnail
+            </button>
+            <label
+            className={`mt-2 flex items-center space-x-2 cursor-pointer ${
+              downloading ? "opacity-60 cursor-not-allowed" : ""
+            }`}
+            >
+            <input
+              type="checkbox"
+              checked={autoDownloadThumb}
+              onChange={() => setAutoDownloadThumb(!autoDownloadThumb)}
+              disabled={downloading}
+              className={`form-checkbox h-4 w-4 ${
+              downloading ? "bg-gray-200 cursor-not-allowed" : ""
+              }`}
+            />
+            <span className="text-sm text-gray-700">Auto download thumbnail with video</span>
+            </label>
         </div>
       )}
+
       <div className="mt-4">
         {phase && <div className="mb-2 font-semibold">{phase.toUpperCase()}</div>}
         <div className="w-96 mx-auto bg-gray-200 rounded h-4 overflow-hidden">

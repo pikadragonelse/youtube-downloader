@@ -1,9 +1,13 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "YourAppID",
+  "appId": "287357",
   "asar": true,
-  "productName": "YourAppName",
+  "asarUnpack": [
+    "python/**",
+    "ffmpeg/**"
+  ],
+  "productName": "YoutubeDownloader",
   "directories": {
     "output": "release/${version}"
   },
@@ -16,8 +20,8 @@
   "publish": [
     {
       "provider": "github",
-      "owner": "your-github-username",
-      "repo": "your-repo-name"
+      "owner": "pikadragonelse",
+      "repo": "youtube-downloader"
     }
   ],
   "mac": {

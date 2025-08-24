@@ -1,12 +1,1 @@
-"use strict";
-const electron = require("electron");
-electron.contextBridge.exposeInMainWorld("electronAPI", {
-  downloadVideo: (opts) => electron.ipcRenderer.invoke("download-video", opts),
-  cancelDownload: () => electron.ipcRenderer.invoke("cancel-download"),
-  getTitle: (url) => electron.ipcRenderer.invoke("get-title", url),
-  selectFolder: () => electron.ipcRenderer.invoke("select-folder"),
-  getSettings: () => electron.ipcRenderer.invoke("get-settings"),
-  onProgress: (callback) => {
-    electron.ipcRenderer.on("download-progress", (_, progress) => callback(progress));
-  }
-});
+"use strict";const e=require("electron");e.contextBridge.exposeInMainWorld("electronAPI",{downloadVideo:n=>e.ipcRenderer.invoke("download-video",n),cancelDownload:()=>e.ipcRenderer.invoke("cancel-download"),getTitle:n=>e.ipcRenderer.invoke("get-title",n),selectFolder:()=>e.ipcRenderer.invoke("select-folder"),getSettings:()=>e.ipcRenderer.invoke("get-settings"),onProgress:n=>{e.ipcRenderer.on("download-progress",(r,o)=>n(o))},getThumb:n=>e.ipcRenderer.invoke("get-thumb",n)});

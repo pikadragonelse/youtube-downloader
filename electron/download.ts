@@ -2,7 +2,7 @@
 import path from 'path';
 import fs from 'fs';
 import { dialog, ipcMain } from 'electron';
-import { cancelDownload, downloadWithYtDlpAndMerge, getTitle } from './downloader';
+import { cancelDownload, downloadWithYtDlpAndMerge, getThumb, getTitle } from './downloader';
 
 const userDataPath = process.env.APPDATA || process.env.HOME || process.env.USERPROFILE || '.';
 const settingsFile = path.join(userDataPath, 'idm-clone-user-settings.json');
@@ -54,4 +54,24 @@ ipcMain.handle("select-folder", async () => {
 
 ipcMain.handle("get-settings", async () => {
   return loadSettings();
+});
+
+/** Thêm kênh get-thumb **/
+ipcMain.handle("get-thumb", async (_event, { url, outputFolder, fileName }: { url: string; outputFolder?: string; fileName?: string }) => {
+  try {
+    // Lấy settings nếu chưa truyền outputFolder
+    const settings = loadSettings();
+    const folder = outputFolder || settings.outputFolder || './downloads';
+
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder, { recursive: true });
+    }
+
+    // Lưu thumbnail và trả về đường dẫn
+    const thumbPath = await getThumb(url, folder, fileName);
+    return thumbPath;
+  } catch (err: any) {
+    console.error('Error getting thumbnail:', err);
+    throw new Error('Failed to get thumbnail: ' + err.message);
+  }
 });
